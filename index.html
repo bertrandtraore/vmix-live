@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Live Video</title>
 
     <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         html, body {
             margin: 0;
             width: 100%;
@@ -28,24 +33,46 @@
             position: fixed;
             top: 15px;
             left: 15px;
-            z-index: 10;
+            z-index: 20;
             color: white;
-            background: rgba(0,0,0,.75);
+            background: rgba(0, 0, 0, 0.75);
             padding: 8px 14px;
             border-radius: 5px;
+            font-size: 14px;
         }
 
-        #unmute {
+        #speakerButton {
             position: fixed;
             bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            padding: 12px 24px;
-            font-size: 16px;
+            right: 25px;
+            z-index: 30;
+
+            width: 55px;
+            height: 55px;
+
             border: none;
-            border-radius: 6px;
+            border-radius: 50%;
+
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+
+            font-size: 25px;
+
             cursor: pointer;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        #speakerButton:hover {
+            background: rgba(40, 40, 40, 0.95);
+        }
+
+        #speakerButton:active {
+            transform: scale(0.92);
         }
     </style>
 </head>
@@ -54,9 +81,20 @@
 
 <div id="status">Connecting...</div>
 
-<video id="video" autoplay playsinline controls></video>
+<!-- Live video only — no play/pause controls -->
+<video
+    id="video"
+    autoplay
+    playsinline>
+</video>
 
-<button id="unmute">🔊 Enable Audio</button>
+<!-- Speaker control -->
+<button
+    id="speakerButton"
+    title="Mute">
+    🔊
+</button>
+
 
 <script>
 
@@ -69,42 +107,111 @@ const ROOM_NAME =
 const TOKEN_SERVER_ID =
     "remotevideo-2zed8g";
 
+
 const video =
     document.getElementById("video");
 
 const status =
     document.getElementById("status");
 
-const unmute =
-    document.getElementById("unmute");
-
-let room;
+const speakerButton =
+    document.getElementById("speakerButton");
 
 
-// Enable browser audio
-unmute.onclick = async function () {
+let room = null;
 
-    try {
+let audioElements = [];
+
+let audioPlaying = true;
+
+
+// --------------------------------------------------
+// SPEAKER BUTTON
+// --------------------------------------------------
+
+speakerButton.addEventListener("click", async () => {
+
+    if (audioPlaying) {
+
+        // ------------------------------------------
+        // STOP AUDIO
+        // ------------------------------------------
+
+        audioPlaying = false;
+
+        audioElements.forEach(audio => {
+
+            audio.pause();
+
+            audio.currentTime = 0;
+
+        });
+
+        // Also mute the video element
+        video.muted = true;
+
+
+        speakerButton.textContent = "🔇";
+
+        speakerButton.title = "Unmute";
+
+    } else {
+
+        // ------------------------------------------
+        // RESUME AUDIO
+        // ------------------------------------------
+
+        audioPlaying = true;
 
         video.muted = false;
 
-        await video.play();
 
-        // Resume Web Audio if required
-        if (room) {
-            await room.startAudio();
+        for (const audio of audioElements) {
+
+            try {
+
+                await audio.play();
+
+            } catch (error) {
+
+                console.log(
+                    "Unable to resume audio:",
+                    error
+                );
+
+            }
+
         }
 
-        unmute.style.display = "none";
 
-    } catch (error) {
+        try {
 
-        console.error("Audio enable error:", error);
+            if (room) {
+                await room.startAudio();
+            }
+
+        } catch (error) {
+
+            console.log(
+                "LiveKit audio:",
+                error
+            );
+
+        }
+
+
+        speakerButton.textContent = "🔊";
+
+        speakerButton.title = "Mute";
 
     }
 
-};
+});
 
+
+// --------------------------------------------------
+// CONNECT TO LIVEKIT
+// --------------------------------------------------
 
 async function connect() {
 
@@ -114,6 +221,7 @@ async function connect() {
             "Getting access token...";
 
 
+        // Development Token Server
         const tokenSource =
             LivekitClient.TokenSource
                 .developmentTokenServer(
@@ -127,6 +235,7 @@ async function connect() {
             });
 
 
+        // Create LiveKit room
         room =
             new LivekitClient.Room({
                 adaptiveStream: true,
@@ -134,18 +243,25 @@ async function connect() {
             });
 
 
+        // --------------------------------------------------
+        // TRACK SUBSCRIBED
+        // --------------------------------------------------
+
         room.on(
             LivekitClient.RoomEvent.TrackSubscribed,
+
             (track, publication, participant) => {
 
                 console.log(
-                    "Track:",
-                    track.kind,
-                    participant.identity
+                    "Track received:",
+                    track.kind
                 );
 
 
+                // ------------------------------------------
                 // VIDEO
+                // ------------------------------------------
+
                 if (
                     track.kind ===
                     LivekitClient.Track.Kind.Video
@@ -153,44 +269,101 @@ async function connect() {
 
                     track.attach(video);
 
+                    video.autoplay = true;
+
+                    video.playsInline = true;
+
+                    video.controls = false;
+
+                    video.muted = false;
+
+
                     status.textContent =
                         "LIVE";
+
+
+                    video.play().catch(
+                        error => {
+
+                            console.log(
+                                "Video autoplay:",
+                                error
+                            );
+
+                        }
+                    );
 
                 }
 
 
+                // ------------------------------------------
                 // AUDIO
+                // ------------------------------------------
+
                 if (
                     track.kind ===
                     LivekitClient.Track.Kind.Audio
                 ) {
 
-                    console.log("AUDIO TRACK RECEIVED");
+                    console.log(
+                        "AUDIO TRACK RECEIVED"
+                    );
+
 
                     const audio =
                         track.attach();
 
+
                     audio.autoplay = true;
+
                     audio.controls = false;
 
-                    document.body.appendChild(audio);
+                    audio.muted = false;
 
-                    audio.play().catch(
-                        error => {
-                            console.log(
-                                "Browser blocked autoplay:",
-                                error
-                            );
-                        }
+
+                    document.body.appendChild(
+                        audio
                     );
+
+
+                    audioElements.push(
+                        audio
+                    );
+
+
+                    // Play only if speaker is ON
+                    if (audioPlaying) {
+
+                        audio.play().catch(
+                            error => {
+
+                                console.log(
+                                    "Audio autoplay blocked:",
+                                    error
+                                );
+
+                            }
+                        );
+
+                    } else {
+
+                        audio.pause();
+
+                    }
+
                 }
 
             }
         );
 
 
+        // --------------------------------------------------
+        // TRACK UNSUBSCRIBED
+        // --------------------------------------------------
+
         room.on(
             LivekitClient.RoomEvent.TrackUnsubscribed,
+
             (track) => {
 
                 track.detach();
@@ -199,8 +372,13 @@ async function connect() {
         );
 
 
+        // --------------------------------------------------
+        // DISCONNECTED
+        // --------------------------------------------------
+
         room.on(
             LivekitClient.RoomEvent.Disconnected,
+
             () => {
 
                 status.textContent =
@@ -209,6 +387,10 @@ async function connect() {
             }
         );
 
+
+        // --------------------------------------------------
+        // CONNECT
+        // --------------------------------------------------
 
         await room.connect(
             tokenResponse.serverUrl,
@@ -220,12 +402,10 @@ async function connect() {
             "Connected — waiting for video...";
 
 
-        // Ask LiveKit to start audio
-        try {
-            await room.startAudio();
-        } catch (e) {
-            console.log("Audio requires user interaction");
-        }
+        console.log(
+            "Connected to room:",
+            ROOM_NAME
+        );
 
     }
 
@@ -239,7 +419,6 @@ async function connect() {
     }
 
 }
-
 
 connect();
 
