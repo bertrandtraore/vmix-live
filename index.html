@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Live Broadcast</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            height: 55px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            background: #111;
+        }
+
+        #status {
+            margin-left: auto;
+            font-size: 14px;
+        }
+
+        main {
+            width: 100%;
+            height: calc(100vh - 55px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <strong>LIVE BROADCAST</strong>
+    <span id="status">Connecting...</span>
+</header>
+
+<main>
+    <video id="video" autoplay playsinline controls></video>
+</main>
+
+<script>
+
+const LIVEKIT_URL =
+    "wss://remote-video-wunzmsjv.livekit.cloud";
+
+const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUEl6N0RIVjRTVlBNNm8iLCJzdWIiOiJ2aWV3ZXIiLCJleHAiOjE3OTAzNDk0MjEsIm5iZiI6MTc5MDM0OTEyMSwiaWF0IjoxNzkwMzQ5MTIxLCJpZGVudGl0eSI6InZpZXdlciIsIm5hbWUiOiJ2aWV3ZXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6InZtaXgtbGl2ZSJ9fQ.5xFQXKuBOlKpDOHLlZqkvED7jhACuL0VmnGzzHjAJ84";
+
+const room = new LivekitClient.Room({
+    adaptiveStream: true
+});
+
+const videoElement =
+    document.getElementById("video");
+
+const status =
+    document.getElementById("status");
+
+room.on(
+    LivekitClient.RoomEvent.TrackSubscribed,
+    (track, publication, participant) => {
+
+        console.log(
+            "Received:",
+            track.kind,
+            participant.identity
+        );
+
+        if (
+            track.kind ===
+            LivekitClient.Track.Kind.Video
+        ) {
+            track.attach(videoElement);
+            status.textContent = "● LIVE";
+        }
+
+        if (
+            track.kind ===
+            LivekitClient.Track.Kind.Audio
+        ) {
+            const audio = track.attach();
+            audio.autoplay = true;
+            document.body.appendChild(audio);
+        }
+    }
+);
+
+room.on(
+    LivekitClient.RoomEvent.TrackUnsubscribed,
+    (track) => {
+        track.detach();
+    }
+);
+
+room.on(
+    LivekitClient.RoomEvent.Disconnected,
+    () => {
+        status.textContent = "Disconnected";
+    }
+);
+
+async function connect() {
+
+    try {
+
+        await room.connect(
+            LIVEKIT_URL,
+            TOKEN
+        );
+
+        status.textContent =
+            "Connected — waiting for video";
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Connection failed";
+    }
+}
+
+connect();
+
+</script>
+
+</body>
+</html>
