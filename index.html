@@ -2,13 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <title>Live Video</title>
 
     <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 
     <style>
+
+        /* ==================================================
+           GLOBAL
+        ================================================== */
+
         * {
             box-sizing: border-box;
         }
@@ -16,36 +22,57 @@
         html,
         body {
             margin: 0;
+            padding: 0;
+
             width: 100%;
             height: 100%;
+
             background: #000;
+
             overflow: hidden;
+
             font-family: Arial, sans-serif;
         }
 
-        /* ==============================
+
+        /* ==================================================
            VIDEO
-        ============================== */
+        ================================================== */
 
         #video {
-            width: 100%;
-            height: 100%;
+            position: fixed;
+
+            top: 0;
+            left: 0;
+
+            width: 100vw;
+            height: 100vh;
+
+            width: 100dvw;
+            height: 100dvh;
+
             object-fit: contain;
+
             background: #000;
+
+            display: block;
         }
 
-        /* ==============================
+
+        /* ==================================================
            STATUS
-        ============================== */
+        ================================================== */
 
         #status {
             position: fixed;
+
             top: 15px;
             left: 15px;
 
             z-index: 20;
 
             color: white;
+
             background: rgba(0, 0, 0, 0.75);
 
             padding: 8px 14px;
@@ -53,11 +80,14 @@
             border-radius: 5px;
 
             font-size: 14px;
+
+            transition: opacity 0.3s ease;
         }
 
-        /* ==============================
+
+        /* ==================================================
            CONTROLS
-        ============================== */
+        ================================================== */
 
         #controls {
             position: fixed;
@@ -68,20 +98,30 @@
             z-index: 30;
 
             display: flex;
+
             align-items: center;
 
             gap: 10px;
+
+            padding-bottom: env(
+                safe-area-inset-bottom,
+                0px
+            );
         }
 
-        /* ==============================
+
+        /* ==================================================
            CONTROL BUTTON
-        ============================== */
+        ================================================== */
 
         .controlButton {
             width: 55px;
             height: 55px;
 
+            padding: 0;
+
             border: none;
+
             border-radius: 50%;
 
             background: rgba(0, 0, 0, 0.75);
@@ -91,21 +131,27 @@
             cursor: pointer;
 
             display: flex;
+
             align-items: center;
             justify-content: center;
 
+            -webkit-tap-highlight-color: transparent;
+
             transition:
-                background 0.2s,
-                transform 0.1s;
+                background 0.2s ease,
+                transform 0.1s ease;
         }
+
 
         .controlButton:hover {
             background: rgba(45, 45, 45, 0.95);
         }
 
+
         .controlButton:active {
             transform: scale(0.92);
         }
+
 
         .controlButton svg {
             width: 25px;
@@ -121,15 +167,16 @@
             stroke-linejoin: round;
         }
 
-        /* ==============================
+
+        /* ==================================================
            MOBILE
-        ============================== */
+        ================================================== */
 
         @media (max-width: 600px) {
 
             #controls {
-                bottom: 15px;
                 right: 15px;
+                bottom: 15px;
             }
 
             .controlButton {
@@ -143,39 +190,79 @@
 
                 font-size: 12px;
             }
+
         }
+
+
+        /* ==================================================
+           FULLSCREEN
+        ================================================== */
+
+        :fullscreen {
+            background: #000;
+        }
+
+
+        :-webkit-full-screen {
+            background: #000;
+        }
+
+
+        /* ==================================================
+           LANDSCAPE FULLSCREEN
+        ================================================== */
+
+        @media (orientation: landscape) {
+
+            #video {
+                width: 100vw;
+                height: 100vh;
+
+                width: 100dvw;
+                height: 100dvh;
+            }
+
+        }
+
     </style>
+
 </head>
+
 
 <body>
 
-    <!-- ==============================
+
+    <!-- ==================================================
          STATUS
-    ============================== -->
+    ================================================== -->
 
     <div id="status">
         Connecting...
     </div>
 
 
-    <!-- ==============================
+    <!-- ==================================================
          VIDEO
-    ============================== -->
+    ================================================== -->
 
     <video
         id="video"
         autoplay
-        playsinline>
+        playsinline
+        webkit-playsinline>
     </video>
 
 
-    <!-- ==============================
+    <!-- ==================================================
          CONTROLS
-    ============================== -->
+    ================================================== -->
 
     <div id="controls">
 
-        <!-- FULLSCREEN BUTTON -->
+
+        <!-- ==================================================
+             FULLSCREEN BUTTON
+        ================================================== -->
 
         <button
             id="fullscreenButton"
@@ -184,15 +271,20 @@
             aria-label="Full Screen">
 
             <svg
+                id="fullscreenIcon"
                 viewBox="0 0 24 24"
                 aria-hidden="true">
 
+                <!-- Top left -->
                 <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
 
+                <!-- Top right -->
                 <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
 
+                <!-- Bottom left -->
                 <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
 
+                <!-- Bottom right -->
                 <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
 
             </svg>
@@ -200,7 +292,9 @@
         </button>
 
 
-        <!-- SPEAKER BUTTON -->
+        <!-- ==================================================
+             SPEAKER BUTTON
+        ================================================== -->
 
         <button
             id="speakerButton"
@@ -217,9 +311,13 @@
                     points="11 5 6 9 2 9 2 15 6 15 11 19 11 5">
                 </polygon>
 
-                <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+                <path
+                    d="M15.5 8.5a5 5 0 0 1 0 7">
+                </path>
 
-                <path d="M19 5a10 10 0 0 1 0 14"></path>
+                <path
+                    d="M19 5a10 10 0 0 1 0 14">
+                </path>
 
             </svg>
 
@@ -263,6 +361,9 @@ const speakerIcon =
 const fullscreenButton =
     document.getElementById("fullscreenButton");
 
+const fullscreenIcon =
+    document.getElementById("fullscreenIcon");
+
 
 /* ==================================================
    VARIABLES
@@ -284,6 +385,7 @@ function setSpeakerIcon(muted) {
     if (muted) {
 
         speakerIcon.innerHTML = `
+
             <polygon
                 points="11 5 6 9 2 9 2 15 6 15 11 19 11 5">
             </polygon>
@@ -301,6 +403,7 @@ function setSpeakerIcon(muted) {
                 x2="16"
                 y2="15">
             </line>
+
         `;
 
         speakerButton.title =
@@ -316,6 +419,7 @@ function setSpeakerIcon(muted) {
     else {
 
         speakerIcon.innerHTML = `
+
             <polygon
                 points="11 5 6 9 2 9 2 15 6 15 11 19 11 5">
             </polygon>
@@ -327,6 +431,7 @@ function setSpeakerIcon(muted) {
             <path
                 d="M19 5a10 10 0 0 1 0 14">
             </path>
+
         `;
 
         speakerButton.title =
@@ -335,6 +440,79 @@ function setSpeakerIcon(muted) {
         speakerButton.setAttribute(
             "aria-label",
             "Mute"
+        );
+
+    }
+
+}
+
+
+/* ==================================================
+   FULLSCREEN ICON
+================================================== */
+
+function setFullscreenIcon(isFullscreen) {
+
+    if (isFullscreen) {
+
+        /*
+         * Exit fullscreen icon
+         */
+
+        fullscreenIcon.innerHTML = `
+
+            <!-- Top left -->
+            <path d="M9 3v5H4"></path>
+
+            <!-- Top right -->
+            <path d="M15 3v5h5"></path>
+
+            <!-- Bottom left -->
+            <path d="M9 21v-5H4"></path>
+
+            <!-- Bottom right -->
+            <path d="M15 21v-5h5"></path>
+
+        `;
+
+        fullscreenButton.title =
+            "Exit Full Screen";
+
+        fullscreenButton.setAttribute(
+            "aria-label",
+            "Exit Full Screen"
+        );
+
+    }
+
+    else {
+
+        /*
+         * Enter fullscreen icon
+         */
+
+        fullscreenIcon.innerHTML = `
+
+            <!-- Top left -->
+            <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+
+            <!-- Top right -->
+            <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
+
+            <!-- Bottom left -->
+            <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
+
+            <!-- Bottom right -->
+            <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+
+        `;
+
+        fullscreenButton.title =
+            "Full Screen";
+
+        fullscreenButton.setAttribute(
+            "aria-label",
+            "Full Screen"
         );
 
     }
@@ -436,6 +614,226 @@ speakerButton.addEventListener(
 
 
 /* ==================================================
+   ENTER LANDSCAPE
+================================================== */
+
+async function enterLandscape() {
+
+    /*
+     * Screen Orientation API
+     *
+     * Supported mainly on mobile browsers
+     * when the page is fullscreen.
+     */
+
+    if (
+        screen.orientation &&
+        screen.orientation.lock
+    ) {
+
+        try {
+
+            await screen.orientation.lock(
+                "landscape"
+            );
+
+            console.log(
+                "Landscape orientation locked"
+            );
+
+        }
+
+        catch (error) {
+
+            console.log(
+                "Landscape orientation could not be locked:",
+                error
+            );
+
+        }
+
+    }
+
+}
+
+
+/* ==================================================
+   UNLOCK ORIENTATION
+================================================== */
+
+function unlockOrientation() {
+
+    if (
+        screen.orientation &&
+        screen.orientation.unlock
+    ) {
+
+        try {
+
+            screen.orientation.unlock();
+
+            console.log(
+                "Orientation unlocked"
+            );
+
+        }
+
+        catch (error) {
+
+            console.log(
+                "Orientation unlock error:",
+                error
+            );
+
+        }
+
+    }
+
+}
+
+
+/* ==================================================
+   ENTER FULLSCREEN
+================================================== */
+
+async function enterFullscreen() {
+
+    try {
+
+        /*
+         * Request fullscreen.
+         *
+         * This must normally happen
+         * directly from the user's click.
+         */
+
+        if (
+            document.documentElement.requestFullscreen
+        ) {
+
+            await document.documentElement
+                .requestFullscreen();
+
+        }
+
+        else if (
+            document.documentElement.webkitRequestFullscreen
+        ) {
+
+            document.documentElement
+                .webkitRequestFullscreen();
+
+        }
+
+
+        /*
+         * Give the browser a moment to
+         * enter fullscreen before locking
+         * the orientation.
+         */
+
+        await new Promise(
+            resolve => setTimeout(
+                resolve,
+                150
+            )
+        );
+
+
+        /*
+         * Lock to landscape.
+         */
+
+        await enterLandscape();
+
+
+        /*
+         * Update icon.
+         */
+
+        setFullscreenIcon(true);
+
+
+        console.log(
+            "Fullscreen + landscape requested"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Fullscreen error:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ==================================================
+   EXIT FULLSCREEN
+================================================== */
+
+async function exitFullscreen() {
+
+    try {
+
+        /*
+         * Unlock orientation first.
+         */
+
+        unlockOrientation();
+
+
+        /*
+         * Exit fullscreen.
+         */
+
+        if (
+            document.exitFullscreen
+        ) {
+
+            await document.exitFullscreen();
+
+        }
+
+        else if (
+            document.webkitExitFullscreen
+        ) {
+
+            document.webkitExitFullscreen();
+
+        }
+
+
+        /*
+         * Update icon.
+         */
+
+        setFullscreenIcon(false);
+
+
+        console.log(
+            "Exited fullscreen"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Exit fullscreen error:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ==================================================
    FULLSCREEN BUTTON
 ================================================== */
 
@@ -443,28 +841,15 @@ fullscreenButton.addEventListener(
     "click",
     async () => {
 
-        try {
+        if (!document.fullscreenElement) {
 
-            if (!document.fullscreenElement) {
-
-                await document.documentElement.requestFullscreen();
-
-            }
-
-            else {
-
-                await document.exitFullscreen();
-
-            }
+            await enterFullscreen();
 
         }
 
-        catch (error) {
+        else {
 
-            console.error(
-                "Fullscreen error:",
-                error
-            );
+            await exitFullscreen();
 
         }
 
@@ -473,7 +858,7 @@ fullscreenButton.addEventListener(
 
 
 /* ==================================================
-   FULLSCREEN STATE
+   FULLSCREEN CHANGE
 ================================================== */
 
 document.addEventListener(
@@ -482,25 +867,15 @@ document.addEventListener(
 
         if (document.fullscreenElement) {
 
-            fullscreenButton.title =
-                "Exit Full Screen";
-
-            fullscreenButton.setAttribute(
-                "aria-label",
-                "Exit Full Screen"
-            );
+            setFullscreenIcon(true);
 
         }
 
         else {
 
-            fullscreenButton.title =
-                "Full Screen";
+            setFullscreenIcon(false);
 
-            fullscreenButton.setAttribute(
-                "aria-label",
-                "Full Screen"
-            );
+            unlockOrientation();
 
         }
 
@@ -509,7 +884,35 @@ document.addEventListener(
 
 
 /* ==================================================
-   CONNECT TO LIVEKIT
+   WEBKIT FULLSCREEN CHANGE
+================================================== */
+
+document.addEventListener(
+    "webkitfullscreenchange",
+    () => {
+
+        if (
+            document.webkitFullscreenElement
+        ) {
+
+            setFullscreenIcon(true);
+
+        }
+
+        else {
+
+            setFullscreenIcon(false);
+
+            unlockOrientation();
+
+        }
+
+    }
+);
+
+
+/* ==================================================
+   LIVEKIT CONNECTION
 ================================================== */
 
 async function connect() {
@@ -520,9 +923,9 @@ async function connect() {
             "Connecting...";
 
 
-        /* ==============================
+        /* ==================================================
            DEVELOPMENT TOKEN SERVER
-        ============================== */
+        ================================================== */
 
         const tokenSource =
             LivekitClient.TokenSource
@@ -533,20 +936,25 @@ async function connect() {
 
         const tokenResponse =
             await tokenSource.fetch({
-                roomName: ROOM_NAME
+
+                roomName:
+                    ROOM_NAME
+
             });
 
 
-        /* ==============================
-           CREATE ROOM
-        ============================== */
+        /* ==================================================
+           CREATE LIVEKIT ROOM
+        ================================================== */
 
         room =
             new LivekitClient.Room({
 
-                adaptiveStream: true,
+                adaptiveStream:
+                    true,
 
-                dynacast: true
+                dynacast:
+                    true
 
             });
 
@@ -556,9 +964,14 @@ async function connect() {
         ================================================== */
 
         room.on(
+
             LivekitClient.RoomEvent.TrackSubscribed,
 
-            (track, publication, participant) => {
+            (
+                track,
+                publication,
+                participant
+            ) => {
 
                 console.log(
                     "Track received:",
@@ -566,16 +979,18 @@ async function connect() {
                 );
 
 
-                /* ==============================
+                /* ==================================================
                    VIDEO
-                ============================== */
+                ================================================== */
 
                 if (
                     track.kind ===
                     LivekitClient.Track.Kind.Video
                 ) {
 
-                    track.attach(video);
+                    track.attach(
+                        video
+                    );
 
 
                     video.autoplay =
@@ -606,9 +1021,9 @@ async function connect() {
                 }
 
 
-                /* ==============================
+                /* ==================================================
                    AUDIO
-                ============================== */
+                ================================================== */
 
                 if (
                     track.kind ===
@@ -665,6 +1080,7 @@ async function connect() {
                 }
 
             }
+
         );
 
 
@@ -673,13 +1089,15 @@ async function connect() {
         ================================================== */
 
         room.on(
+
             LivekitClient.RoomEvent.TrackUnsubscribed,
 
-            (track) => {
+            track => {
 
                 track.detach();
 
             }
+
         );
 
 
@@ -688,6 +1106,7 @@ async function connect() {
         ================================================== */
 
         room.on(
+
             LivekitClient.RoomEvent.Disconnected,
 
             () => {
@@ -696,6 +1115,7 @@ async function connect() {
                     "Disconnected";
 
             }
+
         );
 
 
@@ -704,8 +1124,11 @@ async function connect() {
         ================================================== */
 
         await room.connect(
+
             tokenResponse.serverUrl,
+
             tokenResponse.participantToken
+
         );
 
 
@@ -737,10 +1160,12 @@ async function connect() {
 
 
 /* ==================================================
-   START
+   INITIALIZE
 ================================================== */
 
 setSpeakerIcon(false);
+
+setFullscreenIcon(false);
 
 connect();
 
