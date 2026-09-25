@@ -11,10 +11,6 @@
 
     <style>
 
-        /* ==================================================
-           GLOBAL
-        ================================================== */
-
         * {
             box-sizing: border-box;
         }
@@ -33,11 +29,6 @@
 
             font-family: Arial, sans-serif;
         }
-
-
-        /* ==================================================
-           VIDEO
-        ================================================== */
 
         #video {
             position: fixed;
@@ -58,11 +49,6 @@
             display: block;
         }
 
-
-        /* ==================================================
-           STATUS
-        ================================================== */
-
         #status {
             position: fixed;
 
@@ -80,14 +66,7 @@
             border-radius: 5px;
 
             font-size: 14px;
-
-            transition: opacity 0.3s ease;
         }
-
-
-        /* ==================================================
-           CONTROLS
-        ================================================== */
 
         #controls {
             position: fixed;
@@ -108,11 +87,6 @@
                 0px
             );
         }
-
-
-        /* ==================================================
-           CONTROL BUTTON
-        ================================================== */
 
         .controlButton {
             width: 55px;
@@ -142,16 +116,13 @@
                 transform 0.1s ease;
         }
 
-
         .controlButton:hover {
             background: rgba(45, 45, 45, 0.95);
         }
 
-
         .controlButton:active {
             transform: scale(0.92);
         }
-
 
         .controlButton svg {
             width: 25px;
@@ -166,11 +137,6 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
-
-
-        /* ==================================================
-           MOBILE
-        ================================================== */
 
         @media (max-width: 600px) {
 
@@ -193,24 +159,13 @@
 
         }
 
-
-        /* ==================================================
-           FULLSCREEN
-        ================================================== */
-
         :fullscreen {
             background: #000;
         }
 
-
         :-webkit-full-screen {
             background: #000;
         }
-
-
-        /* ==================================================
-           LANDSCAPE FULLSCREEN
-        ================================================== */
 
         @media (orientation: landscape) {
 
@@ -228,22 +183,17 @@
 
 </head>
 
-
 <body>
 
 
-    <!-- ==================================================
-         STATUS
-    ================================================== -->
+    <!-- STATUS -->
 
     <div id="status">
         Connecting...
     </div>
 
 
-    <!-- ==================================================
-         VIDEO
-    ================================================== -->
+    <!-- VIDEO -->
 
     <video
         id="video"
@@ -253,16 +203,12 @@
     </video>
 
 
-    <!-- ==================================================
-         CONTROLS
-    ================================================== -->
+    <!-- CONTROLS -->
 
     <div id="controls">
 
 
-        <!-- ==================================================
-             FULLSCREEN BUTTON
-        ================================================== -->
+        <!-- FULLSCREEN -->
 
         <button
             id="fullscreenButton"
@@ -275,16 +221,12 @@
                 viewBox="0 0 24 24"
                 aria-hidden="true">
 
-                <!-- Top left -->
                 <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
 
-                <!-- Top right -->
                 <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
 
-                <!-- Bottom left -->
                 <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
 
-                <!-- Bottom right -->
                 <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
 
             </svg>
@@ -292,9 +234,7 @@
         </button>
 
 
-        <!-- ==================================================
-             SPEAKER BUTTON
-        ================================================== -->
+        <!-- SPEAKER -->
 
         <button
             id="speakerButton"
@@ -376,6 +316,17 @@ let audioElements = [];
 let audioEnabled = true;
 
 
+/*
+ * RECONNECT SETTINGS
+ */
+
+let reconnectTimer = null;
+
+let reconnectAttempt = 0;
+
+const RECONNECT_DELAY = 5000;
+
+
 /* ==================================================
    SPEAKER ICON
 ================================================== */
@@ -455,22 +406,14 @@ function setFullscreenIcon(isFullscreen) {
 
     if (isFullscreen) {
 
-        /*
-         * Exit fullscreen icon
-         */
-
         fullscreenIcon.innerHTML = `
 
-            <!-- Top left -->
             <path d="M9 3v5H4"></path>
 
-            <!-- Top right -->
             <path d="M15 3v5h5"></path>
 
-            <!-- Bottom left -->
             <path d="M9 21v-5H4"></path>
 
-            <!-- Bottom right -->
             <path d="M15 21v-5h5"></path>
 
         `;
@@ -487,22 +430,14 @@ function setFullscreenIcon(isFullscreen) {
 
     else {
 
-        /*
-         * Enter fullscreen icon
-         */
-
         fullscreenIcon.innerHTML = `
 
-            <!-- Top left -->
             <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
 
-            <!-- Top right -->
             <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
 
-            <!-- Bottom left -->
             <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
 
-            <!-- Bottom right -->
             <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
 
         `;
@@ -530,23 +465,15 @@ speakerButton.addEventListener(
 
         if (audioEnabled) {
 
-            /* ==============================
-               MUTE
-            ============================== */
-
             audioEnabled = false;
 
             video.muted = true;
 
-
             audioElements.forEach(
                 audio => {
-
                     audio.pause();
-
                 }
             );
-
 
             setSpeakerIcon(true);
 
@@ -554,21 +481,14 @@ speakerButton.addEventListener(
 
         else {
 
-            /* ==============================
-               UNMUTE
-            ============================== */
-
             audioEnabled = true;
 
             video.muted = false;
 
-
             try {
 
                 if (room) {
-
                     await room.startAudio();
-
                 }
 
             }
@@ -581,7 +501,6 @@ speakerButton.addEventListener(
                 );
 
             }
-
 
             for (
                 const audio of audioElements
@@ -604,7 +523,6 @@ speakerButton.addEventListener(
 
             }
 
-
             setSpeakerIcon(false);
 
         }
@@ -614,17 +532,10 @@ speakerButton.addEventListener(
 
 
 /* ==================================================
-   ENTER LANDSCAPE
+   LANDSCAPE
 ================================================== */
 
 async function enterLandscape() {
-
-    /*
-     * Screen Orientation API
-     *
-     * Supported mainly on mobile browsers
-     * when the page is fullscreen.
-     */
 
     if (
         screen.orientation &&
@@ -635,10 +546,6 @@ async function enterLandscape() {
 
             await screen.orientation.lock(
                 "landscape"
-            );
-
-            console.log(
-                "Landscape orientation locked"
             );
 
         }
@@ -672,10 +579,6 @@ function unlockOrientation() {
 
             screen.orientation.unlock();
 
-            console.log(
-                "Orientation unlocked"
-            );
-
         }
 
         catch (error) {
@@ -700,13 +603,6 @@ async function enterFullscreen() {
 
     try {
 
-        /*
-         * Request fullscreen.
-         *
-         * This must normally happen
-         * directly from the user's click.
-         */
-
         if (
             document.documentElement.requestFullscreen
         ) {
@@ -726,37 +622,15 @@ async function enterFullscreen() {
         }
 
 
-        /*
-         * Give the browser a moment to
-         * enter fullscreen before locking
-         * the orientation.
-         */
-
         await new Promise(
-            resolve => setTimeout(
-                resolve,
-                150
-            )
+            resolve =>
+                setTimeout(resolve, 150)
         );
 
-
-        /*
-         * Lock to landscape.
-         */
 
         await enterLandscape();
 
-
-        /*
-         * Update icon.
-         */
-
         setFullscreenIcon(true);
-
-
-        console.log(
-            "Fullscreen + landscape requested"
-        );
 
     }
 
@@ -780,16 +654,7 @@ async function exitFullscreen() {
 
     try {
 
-        /*
-         * Unlock orientation first.
-         */
-
         unlockOrientation();
-
-
-        /*
-         * Exit fullscreen.
-         */
 
         if (
             document.exitFullscreen
@@ -807,17 +672,7 @@ async function exitFullscreen() {
 
         }
 
-
-        /*
-         * Update icon.
-         */
-
         setFullscreenIcon(false);
-
-
-        console.log(
-            "Exited fullscreen"
-        );
 
     }
 
@@ -884,35 +739,44 @@ document.addEventListener(
 
 
 /* ==================================================
-   WEBKIT FULLSCREEN CHANGE
+   AUTOMATIC RECONNECT
 ================================================== */
 
-document.addEventListener(
-    "webkitfullscreenchange",
-    () => {
+function scheduleReconnect() {
 
-        if (
-            document.webkitFullscreenElement
-        ) {
+    /*
+     * Prevent multiple reconnect timers.
+     */
 
-            setFullscreenIcon(true);
-
-        }
-
-        else {
-
-            setFullscreenIcon(false);
-
-            unlockOrientation();
-
-        }
-
+    if (reconnectTimer) {
+        return;
     }
-);
+
+
+    reconnectAttempt++;
+
+
+    status.textContent =
+        "Connection lost — reconnecting...";
+
+
+    reconnectTimer =
+        setTimeout(
+            async () => {
+
+                reconnectTimer = null;
+
+                await connect();
+
+            },
+            RECONNECT_DELAY
+        );
+
+}
 
 
 /* ==================================================
-   LIVEKIT CONNECTION
+   CONNECT TO LIVEKIT
 ================================================== */
 
 async function connect() {
@@ -923,8 +787,55 @@ async function connect() {
             "Connecting...";
 
 
+        /*
+         * Clean up previous room.
+         */
+
+        if (room) {
+
+            try {
+
+                room.removeAllListeners();
+
+                await room.disconnect();
+
+            }
+
+            catch (error) {
+
+                console.log(
+                    "Previous room cleanup:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /*
+         * Remove old audio elements.
+         */
+
+        audioElements.forEach(
+            audio => {
+
+                try {
+                    audio.pause();
+                }
+                catch {}
+
+                audio.remove();
+
+            }
+        );
+
+
+        audioElements = [];
+
+
         /* ==================================================
-           DEVELOPMENT TOKEN SERVER
+           TOKEN SERVER
         ================================================== */
 
         const tokenSource =
@@ -944,7 +855,7 @@ async function connect() {
 
 
         /* ==================================================
-           CREATE LIVEKIT ROOM
+           CREATE ROOM
         ================================================== */
 
         room =
@@ -979,9 +890,9 @@ async function connect() {
                 );
 
 
-                /* ==================================================
+                /* ==============================
                    VIDEO
-                ================================================== */
+                ============================== */
 
                 if (
                     track.kind ===
@@ -1007,6 +918,9 @@ async function connect() {
                         "LIVE";
 
 
+                    reconnectAttempt = 0;
+
+
                     video.play().catch(
                         error => {
 
@@ -1021,9 +935,9 @@ async function connect() {
                 }
 
 
-                /* ==================================================
+                /* ==============================
                    AUDIO
-                ================================================== */
+                ============================== */
 
                 if (
                     track.kind ===
@@ -1111,8 +1025,16 @@ async function connect() {
 
             () => {
 
+                console.log(
+                    "LiveKit disconnected"
+                );
+
+
                 status.textContent =
-                    "Disconnected";
+                    "Connection lost — reconnecting...";
+
+
+                scheduleReconnect();
 
             }
 
@@ -1132,14 +1054,22 @@ async function connect() {
         );
 
 
-        status.textContent =
-            "Connected — waiting for video...";
-
-
         console.log(
             "Connected to:",
             ROOM_NAME
         );
+
+
+        /*
+         * Connection established.
+         */
+
+        reconnectAttempt = 0;
+
+
+        status.textContent =
+            "Connected — waiting for video...";
+
 
     }
 
@@ -1152,7 +1082,14 @@ async function connect() {
 
 
         status.textContent =
-            "Connection failed";
+            "Connection lost — reconnecting...";
+
+
+        /*
+         * Automatically try again.
+         */
+
+        scheduleReconnect();
 
     }
 
