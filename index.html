@@ -3,16 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Live Video</title>
 
     <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
         html, body {
             margin: 0;
             width: 100%;
@@ -38,7 +33,19 @@
             background: rgba(0,0,0,.75);
             padding: 8px 14px;
             border-radius: 5px;
-            font-size: 14px;
+        }
+
+        #unmute {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -47,12 +54,9 @@
 
 <div id="status">Connecting...</div>
 
-<video
-    id="video"
-    autoplay
-    playsinline
-    controls>
-</video>
+<video id="video" autoplay playsinline controls></video>
+
+<button id="unmute">🔊 Enable Audio</button>
 
 <script>
 
@@ -71,37 +75,56 @@ const video =
 const status =
     document.getElementById("status");
 
-let room = null;
+const unmute =
+    document.getElementById("unmute");
+
+let room;
 
 
-// Create the development token source
-const tokenSource =
-    LivekitClient.TokenSource.developmentTokenServer(
-        TOKEN_SERVER_ID
-    );
-
-
-// Connect to LiveKit
-async function connectToLiveKit() {
+// Enable browser audio
+unmute.onclick = async function () {
 
     try {
 
-        status.textContent = "Getting access token...";
+        video.muted = false;
+
+        await video.play();
+
+        // Resume Web Audio if required
+        if (room) {
+            await room.startAudio();
+        }
+
+        unmute.style.display = "none";
+
+    } catch (error) {
+
+        console.error("Audio enable error:", error);
+
+    }
+
+};
+
+
+async function connect() {
+
+    try {
+
+        status.textContent =
+            "Getting access token...";
+
+
+        const tokenSource =
+            LivekitClient.TokenSource
+                .developmentTokenServer(
+                    TOKEN_SERVER_ID
+                );
+
 
         const tokenResponse =
             await tokenSource.fetch({
                 roomName: ROOM_NAME
             });
-
-        const serverUrl =
-            tokenResponse.serverUrl;
-
-        const participantToken =
-            tokenResponse.participantToken;
-
-
-        status.textContent =
-            "Connecting to live stream...";
 
 
         room =
@@ -111,18 +134,18 @@ async function connectToLiveKit() {
             });
 
 
-        // Video/audio tracks
         room.on(
             LivekitClient.RoomEvent.TrackSubscribed,
             (track, publication, participant) => {
 
                 console.log(
-                    "Track subscribed:",
+                    "Track:",
                     track.kind,
                     participant.identity
                 );
 
 
+                // VIDEO
                 if (
                     track.kind ===
                     LivekitClient.Track.Kind.Video
@@ -136,23 +159,36 @@ async function connectToLiveKit() {
                 }
 
 
+                // AUDIO
                 if (
                     track.kind ===
                     LivekitClient.Track.Kind.Audio
                 ) {
 
+                    console.log("AUDIO TRACK RECEIVED");
+
                     const audio =
                         track.attach();
 
                     audio.autoplay = true;
+                    audio.controls = false;
 
                     document.body.appendChild(audio);
+
+                    audio.play().catch(
+                        error => {
+                            console.log(
+                                "Browser blocked autoplay:",
+                                error
+                            );
+                        }
+                    );
                 }
+
             }
         );
 
 
-        // Track removed
         room.on(
             LivekitClient.RoomEvent.TrackUnsubscribed,
             (track) => {
@@ -163,7 +199,6 @@ async function connectToLiveKit() {
         );
 
 
-        // Disconnected
         room.on(
             LivekitClient.RoomEvent.Disconnected,
             () => {
@@ -175,10 +210,9 @@ async function connectToLiveKit() {
         );
 
 
-        // Connect
         await room.connect(
-            serverUrl,
-            participantToken
+            tokenResponse.serverUrl,
+            tokenResponse.participantToken
         );
 
 
@@ -186,10 +220,12 @@ async function connectToLiveKit() {
             "Connected — waiting for video...";
 
 
-        console.log(
-            "Connected to room:",
-            ROOM_NAME
-        );
+        // Ask LiveKit to start audio
+        try {
+            await room.startAudio();
+        } catch (e) {
+            console.log("Audio requires user interaction");
+        }
 
     }
 
@@ -205,7 +241,7 @@ async function connectToLiveKit() {
 }
 
 
-connectToLiveKit();
+connect();
 
 </script>
 
